@@ -5,20 +5,21 @@ import { IERC20, SafeERC20 } from "@1inch/solidity-utils/contracts/libraries/Saf
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "./interfaces/IPresale.sol";
+import "./interfaces/IPresaleBlast.sol";
 
-contract Presale is IPresale, Ownable, Pausable {
+contract PresaleBlast is IPresaleBlast, Ownable, Pausable {
   using SafeERC20 for IERC20;
 
   int32 public constant STABLETOKEN_PRICE = 1e8;
-  uint8 public constant STABLE_TOKEN_DECIMALS = 6;
   uint8 public constant PRICEFEED_DECIMALS = 8;
-  uint8 public constant COIN_DECIMALS = 18;
+  uint8 public constant TOKEN_PRECISION = 18;
 
   AggregatorV3Interface public immutable COIN_PRICE_FEED;
 
-  IERC20 public immutable usdcToken;
   IERC20 public immutable usdtToken;
+  IERC20 public immutable usdcToken;
+  IERC20 public immutable usdbToken;
+  IERC20 public immutable wethToken;
 
   address public protocolWallet;
 
@@ -32,15 +33,19 @@ contract Presale is IPresale, Ownable, Pausable {
 
   constructor(
     AggregatorV3Interface COIN_PRICE_FEED_,
-    IERC20 usdcToken_,
     IERC20 usdtToken_,
+    IERC20 usdcToken_,
+    IERC20 usdbToken_,
+    IERC20 wethToken_,
     address protocolWallet_,
     address admin
   ) Ownable(admin) {
     COIN_PRICE_FEED = COIN_PRICE_FEED_;
 
-    usdcToken = usdcToken_;
     usdtToken = usdtToken_;
+    usdcToken = usdcToken_;
+    usdbToken = usdbToken_;
+    wethToken = wethToken_;
 
     protocolWallet = protocolWallet_;
 
@@ -94,8 +99,24 @@ contract Presale is IPresale, Ownable, Pausable {
       }
   }
 
+  function depositUSDBTo(address to, uint256 amount, address referrer) external whenNotPaused {
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(to, amount, true);
+
+    _depositInteractions(usdbToken, amount, chargeBack, spendedValue);
+
+    emit TokensBought(address(usdbToken), to, referrer, spendedValue);
+  }
+
+  function depositUSDB(uint256 amount, address referrer) external whenNotPaused {
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(msg.sender, amount, true);
+
+    _depositInteractions(usdbToken, amount, chargeBack, spendedValue);
+
+    emit TokensBought(address(usdbToken), msg.sender, referrer, spendedValue);
+  }
+
   function depositUSDCTo(address to, uint256 amount, address referrer) external whenNotPaused {
-    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(usdcToken, to, amount, true);
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(to, amount, true);
 
     _depositInteractions(usdcToken, amount, chargeBack, spendedValue);
 
@@ -103,7 +124,7 @@ contract Presale is IPresale, Ownable, Pausable {
   }
 
   function depositUSDC(uint256 amount, address referrer) external whenNotPaused {
-    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(usdcToken, msg.sender, amount, true);
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(msg.sender, amount, true);
 
     _depositInteractions(usdcToken, amount, chargeBack, spendedValue);
 
@@ -111,7 +132,7 @@ contract Presale is IPresale, Ownable, Pausable {
   }
 
   function depositUSDTTo(address to, uint256 amount, address referrer) external whenNotPaused {
-    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(usdtToken, to, amount, true);
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(to, amount, true);
 
     _depositInteractions(usdtToken, amount, chargeBack, spendedValue);
 
@@ -119,15 +140,31 @@ contract Presale is IPresale, Ownable, Pausable {
   }
 
   function depositUSDT(uint256 amount, address referrer) external whenNotPaused {
-    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(usdtToken, msg.sender, amount, true);
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(msg.sender, amount, true);
 
     _depositInteractions(usdtToken, amount, chargeBack, spendedValue);
 
     emit TokensBought(address(usdtToken), msg.sender, referrer, spendedValue);
   }
 
+  function depositWETHTo(address to, uint256 amount, address referrer) external whenNotPaused {
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(to, amount, false);
+
+    _depositInteractions(wethToken, amount, chargeBack, spendedValue);
+
+    emit TokensBought(address(wethToken), to, referrer, spendedValue);
+  }
+
+  function depositWETH(uint256 amount, address referrer) external whenNotPaused {
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(msg.sender, amount, false);
+
+    _depositInteractions(wethToken, amount, chargeBack, spendedValue);
+
+    emit TokensBought(address(wethToken), msg.sender, referrer, spendedValue);
+  }
+
   function depositCoinTo(address to, address referrer) public payable whenNotPaused {
-    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(IERC20(address(0)), to, msg.value, false);
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(to, msg.value, false);
 
     (bool success, ) = payable(protocolWallet).call{value: spendedValue}("");
     require(success, "Presale: Coin transfer failed");
@@ -141,7 +178,7 @@ contract Presale is IPresale, Ownable, Pausable {
   }
 
   function depositCoin(address referrer) public payable whenNotPaused {
-    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(IERC20(address(0)), msg.sender, msg.value, false);
+    (uint256 chargeBack, uint256 spendedValue) = _depositChecksAndEffects(msg.sender, msg.value, false);
 
     (bool success, ) = payable(protocolWallet).call{value: spendedValue}("");
     require(success, "Presale: Coin transfer failed");
@@ -155,7 +192,6 @@ contract Presale is IPresale, Ownable, Pausable {
   }
 
   function _depositChecksAndEffects(
-    IERC20 token, 
     address to, 
     uint256 value, 
     bool isStableToken
@@ -163,7 +199,7 @@ contract Presale is IPresale, Ownable, Pausable {
     require(stages[stageIterator].amount != 0, "PreSale: is ended");
 
     (uint256 tokensToTransfer, uint256 coinPrice) = _calculateAmount(isStableToken, value);
-    (chargeBack, spendedValue) = _purchase(token, to, coinPrice, tokensToTransfer, value);
+    (chargeBack, spendedValue) = _purchase(to, coinPrice, tokensToTransfer, value);
   }
 
   function _depositInteractions(
@@ -179,23 +215,19 @@ contract Presale is IPresale, Ownable, Pausable {
 
   function _calculateAmount(bool isStableToken, uint256 value) private view returns (uint256 amount, uint256 price) {
     int256 coinPrice;
-    uint256 PRECISION;
 
     if (isStableToken) {
       coinPrice = STABLETOKEN_PRICE;
-      PRECISION = STABLE_TOKEN_DECIMALS;
     } else {
       (, coinPrice, , , ) = COIN_PRICE_FEED.latestRoundData();
-      PRECISION = COIN_DECIMALS;
     }
 
     uint256 expectedAmount = uint(coinPrice) * value / uint(stages[stageIterator].cost);
 
-    return (expectedAmount / 10 ** (PRECISION), uint(coinPrice));
+    return (expectedAmount / 10 ** (TOKEN_PRECISION), uint(coinPrice));
   }
 
   function _purchase(
-    IERC20 token, 
     address to, 
     uint256 coinPrice, 
     uint256 amount, 
@@ -211,12 +243,7 @@ contract Presale is IPresale, Ownable, Pausable {
 
     totalSoldInUSD += spendedValue;
 
-    if(address(token) == address(0)) {
-      uint256 usdInEth = 1 ether / coinPrice;
-      spendedValue *= usdInEth;
-    } else {
-      spendedValue /= 10 ** (PRICEFEED_DECIMALS - STABLE_TOKEN_DECIMALS);
-    }
+    spendedValue *= (1 ether / coinPrice);
 
     tokensToChargeBack = value - spendedValue;
 

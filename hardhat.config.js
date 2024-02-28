@@ -52,12 +52,33 @@ module.exports = {
       apiKey:{
         polygonMumbai: `${process.env.POLYGONSCAN_API_KEY}` || '',
         polygon: `${process.env.POLYGONSCAN_API_KEY}` || '',
-        bsc: `${process.env.BSCSCAN_API_KEY}`,
-        bscTestnet: `${process.env.BSCSCAN_API_KEY}`,
-        ethereum: `${process.env.ETHERSCAN_API_KEY}`,
-        sepolia: `${process.env.ETHERSCAN_API_KEY}`,
-        mainnet: `${process.env.ETHERSCAN_API_KEY}`,
-      }
+        bsc: `${process.env.BSCSCAN_API_KEY}` || '',
+        bscTestnet: `${process.env.BSCSCAN_API_KEY}` || '',
+        ethereum: `${process.env.ETHERSCAN_API_KEY}` || '',
+        sepolia: `${process.env.ETHERSCAN_API_KEY}` || '',
+        mainnet: `${process.env.ETHERSCAN_API_KEY}` || '',
+        arbitrumOne: `${process.env.ARBISCAN_API_KEY}` || '',
+        linea: `${process.env.LINEA_EXPLORER_API_KEY}` || '',
+        blastSepolia: `blast_sepolia`, // no api key required
+      },
+      customChains: [
+        {
+          network: "linea",
+          chainId: 59144,
+          urls: {
+            apiURL: "https://api.lineascan.build/api",
+            browserURL: "https://lineascan.build"
+          }
+        },
+        {
+          network: "blastSepolia",
+          chainId: 168587773,
+          urls: {
+            apiURL: "https://api.routescan.io/v2/network/testnet/evm/168587773/etherscan",
+            browserURL: "https://testnet.blastscan.io"
+          }
+        },
+      ]
     },
     namedAccounts: {
       deployer: {
@@ -120,6 +141,21 @@ module.exports = {
       sepolia: {
         chainId: 11155111,
         url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_ETHEREUM_SEPOLIA_KEY}`,
+        accounts: [ `0x${process.env.PRIVATE_KEY_DEPLOYER}` ]
+      },
+      arbitrum: {
+        chainId: 42161,
+        url: `https://arbitrum-mainnet.infura.io/v3/${process.env.ALCHEMY_ARBITRUM_KEY}`,
+        accounts: [ `0x${process.env.PRIVATE_KEY_DEPLOYER}` ]
+      },
+      linea: {
+        chainId: 59144,
+        url: `https://linea-mainnet.infura.io/v3/${process.env.ALCHEMY_LINEA_KEY}`,
+        accounts: [ `0x${process.env.PRIVATE_KEY_DEPLOYER}` ]
+      },
+      blastSepolia: {
+        chainId: 168587773,
+        url: `https://sepolia.blast.io`,
         accounts: [ `0x${process.env.PRIVATE_KEY_DEPLOYER}` ]
       }
     },

@@ -14,20 +14,26 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
 
     const coinPriceFeed = process.env.COIN_PRICE_FEED
-    const usdcToken = process.env.USDC_TOKEN
+
     const usdtToken = process.env.USDT_TOKEN
+    const usdcToken = process.env.USDC_TOKEN
+    const usdbToken = process.env.USDB_TOKEN
+    const wethToken = process.env.WETH_TOKEN
+
     const protocolWallet = process.env.PROTOCOL_WALLET
     const admin = process.env.PUBLIC_KEY_ADMIN
 
     const args = [
         coinPriceFeed,
-        usdcToken,
         usdtToken,
+        usdcToken,
+        usdbToken,
+        wethToken,
         protocolWallet,
         admin
     ]
 
-    const presale = await deploy('PresaleBSC', {
+    const presale = await deploy('PresaleBlast', {
         from: deployer,
         args: args
     })
@@ -44,4 +50,4 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 };
 
-module.exports.tags = ['Presale'];
+module.exports.tags = ['PresaleBlast'];

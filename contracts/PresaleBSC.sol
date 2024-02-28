@@ -43,16 +43,16 @@ contract PresaleBSC is IPresale, Ownable, Pausable {
 
     protocolWallet = protocolWallet_;
 
-    stages.push(StageData(2e6, 25e5)); // 0.02
-    stages.push(StageData(3e6, 25e5)); // 0.03
-    stages.push(StageData(4e6, 625e4)); // 0.04
-    stages.push(StageData(5e6, 275e5)); // 0.05
-    stages.push(StageData(55e5, 375e5)); // 0.055
-    stages.push(StageData(6e6, 4125e4)); // 0.06
-    stages.push(StageData(65e5, 375e5)); // 0.065
-    stages.push(StageData(7e6, 35e6)); // 0.07
-    stages.push(StageData(8e6, 75e5)); // 0.08
-    stages.push(StageData(9e6, 25e5)); // 0.09
+    stages.push(StageData(2e6, 25e5));
+    stages.push(StageData(3e6, 25e5));
+    stages.push(StageData(4e6, 625e4));
+    stages.push(StageData(5e6, 275e5));
+    stages.push(StageData(55e5, 375e5));
+    stages.push(StageData(6e6, 4125e4));
+    stages.push(StageData(65e5, 375e5));
+    stages.push(StageData(7e6, 35e6));
+    stages.push(StageData(8e6, 75e5));
+    stages.push(StageData(9e6, 25e5));
     stages.push(StageData(0, 0));
   }
 
@@ -61,9 +61,11 @@ contract PresaleBSC is IPresale, Ownable, Pausable {
   }
 
   function setStage(uint256 stageIterator_) external onlyOwner {
-    require(stages.length >= stageIterator_, "Presale: Wrong iterator");
+    require(stageIterator_ < stages.length, "Presale: Wrong iterator");
 
     stageIterator = stageIterator_;
+
+    emit StageUpdated(stageIterator);
   }
 
   function updateTotalSold(uint256 amount) external onlyOwner {
@@ -152,20 +154,21 @@ contract PresaleBSC is IPresale, Ownable, Pausable {
   }
 
   function _depositChecksAndEffects(
-    address to,
-    uint256 value,
+    address to, 
+    uint256 value, 
     bool isStableToken
   ) internal returns (uint256 chargeBack, uint256 spendedValue) {
     require(stages[stageIterator].amount != 0, "PreSale: is ended");
 
     (uint256 tokensToTransfer, uint256 coinPrice) = _calculateAmount(isStableToken, value);
+    
     (chargeBack, spendedValue) = _purchase(to, coinPrice, tokensToTransfer, value);
   }
 
   function _depositInteractions(
-    IERC20 token,
-    uint256 amount,
-    uint256 chargeBack,
+    IERC20 token, 
+    uint256 amount, 
+    uint256 chargeBack, 
     uint256 spendedValue
   ) private {
     token.safeTransferFrom(msg.sender, address(this), amount);
@@ -188,14 +191,14 @@ contract PresaleBSC is IPresale, Ownable, Pausable {
   }
 
   function _purchase(
-    address to,
-    uint256 coinPrice,
-    uint256 amount,
+    address to, 
+    uint256 coinPrice, 
+    uint256 amount, 
     uint256 value
   ) private returns (uint256 tokensToChargeBack, uint256 spendedValue) {
     StageData storage crtStage =  stages[stageIterator];
 
-    if (uint(crtStage.amount) < amount) {
+    if (uint(crtStage.amount) <= amount) {
       spendedValue = crtStage.amount * crtStage.cost;
     } else {
       spendedValue = amount * crtStage.cost;
@@ -205,11 +208,11 @@ contract PresaleBSC is IPresale, Ownable, Pausable {
 
     spendedValue *= (1 ether / coinPrice);
 
-    if (uint(crtStage.amount) < amount) {
+    tokensToChargeBack = value - spendedValue;
+
+    if (uint(crtStage.amount) <= amount) {
       balances[to] += crtStage.amount;
       totalTokensSold += crtStage.amount;
-
-      tokensToChargeBack = value - spendedValue;
 
       crtStage.amount = 0;
       stageIterator++;
