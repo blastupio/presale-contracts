@@ -3,12 +3,16 @@ pragma solidity 0.8.24;
 
 import { IERC20, SafeERC20 } from "@1inch/solidity-utils/contracts/libraries/SafeERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./interfaces/IPresaleBlast.sol";
 
-contract PresaleBlast is IPresaleBlast, Ownable, Pausable {
+contract PresaleBlast is IPresaleBlast, AccessControl, Pausable {
   using SafeERC20 for IERC20;
+
+  bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+
+  uint256 public constant DEFAULT_DELAY = 43200;
 
   int32 public constant STABLETOKEN_PRICE = 1e8;
   uint8 public constant PRICEFEED_DECIMALS = 8;
@@ -31,6 +35,8 @@ contract PresaleBlast is IPresaleBlast, Ownable, Pausable {
 
   mapping(address user => uint256 balance) public balances;
 
+  mapping(bytes4 selector => uint256 timestamp) private _timestamps;
+
   constructor(
     AggregatorV3Interface COIN_PRICE_FEED_,
     IERC20 usdtToken_,
@@ -38,8 +44,9 @@ contract PresaleBlast is IPresaleBlast, Ownable, Pausable {
     IERC20 usdbToken_,
     IERC20 wethToken_,
     address protocolWallet_,
-    address admin
-  ) Ownable(admin) {
+    address DAO,
+    address operator
+  ) {
     COIN_PRICE_FEED = COIN_PRICE_FEED_;
 
     usdtToken = usdtToken_;
@@ -60,13 +67,23 @@ contract PresaleBlast is IPresaleBlast, Ownable, Pausable {
     stages.push(StageData(8e6, 75e5));
     stages.push(StageData(9e6, 25e5));
     stages.push(StageData(0, 0));
+
+    _grantRole(DEFAULT_ADMIN_ROLE, DAO);
+    _grantRole(OPERATOR_ROLE, operator);
   }
 
-  function updateProtocolWallet(address wallet) external onlyOwner {
+  //NOTE function selector is: 0xe308a099
+  function updateProtocolWallet(address wallet) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    uint256 delayedTill = _timestamps[0xe308a099];
+
+    if(delayedTill > 0 && delayedTill <= block.timestamp) {
       protocolWallet = wallet;
+    } else {
+      _timestamps[0xe308a099] = block.timestamp + DEFAULT_DELAY;
+    }
   }
 
-  function setStage(uint256 stageIterator_) external onlyOwner {
+  function setStage(uint256 stageIterator_) external onlyRole(OPERATOR_ROLE) {
     require(stageIterator_ < stages.length, "Presale: Wrong iterator");
 
     stageIterator = stageIterator_;
@@ -74,19 +91,30 @@ contract PresaleBlast is IPresaleBlast, Ownable, Pausable {
     emit StageUpdated(stageIterator);
   }
 
-  function updateTotalSold(uint256 amount) external onlyOwner {
-    totalTokensSold = amount;
+  //NOTE function selector is: 0x76aa28fc
+  function updateTotalSold(uint256 amount) external onlyRole(OPERATOR_ROLE) {
+    uint256 delayedTill = _timestamps[0x76aa28fc];
+
+    if(delayedTill > 0 && delayedTill <= block.timestamp) {
+      totalTokensSold = amount;
+    } else {
+      _timestamps[0x76aa28fc] = block.timestamp + DEFAULT_DELAY;
+    }
   }
 
-  function pause() external onlyOwner {
+  function pause() external onlyRole(OPERATOR_ROLE) {
     _pause();
   }
 
-  function unpause() external onlyOwner {
+  function unpause() external onlyRole(OPERATOR_ROLE) {
     _unpause();
   }
 
-  function rescueFunds(IERC20 token, uint256 amount) external onlyOwner {
+  //NOTE function selector is: 0x78e3214f
+  function rescueFunds(IERC20 token, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    uint256 delayedTill = _timestamps[0x78e3214f];
+
+    if(delayedTill > 0 && delayedTill <= block.timestamp) {
       if (address(token) == address(0)) {
           require(amount <= address(this).balance, "Presale: Wrong amount");
           (bool success, ) = payable(msg.sender).call{value: amount}("");
@@ -97,6 +125,9 @@ contract PresaleBlast is IPresaleBlast, Ownable, Pausable {
 
           token.safeTransfer(protocolWallet, amount);
       }
+    } else {
+      _timestamps[0x78e3214f] = block.timestamp + DEFAULT_DELAY;
+    }
   }
 
   function depositUSDBTo(address to, uint256 amount, address referrer) external whenNotPaused {
