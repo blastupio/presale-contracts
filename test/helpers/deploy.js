@@ -31,7 +31,8 @@ async function deployPresale(
     usdcToken,
     usdtToken,
     protocolWallet,
-    admin
+    admin,
+    operator
 ) {
 
     const args = [
@@ -39,7 +40,8 @@ async function deployPresale(
         usdcToken,
         usdtToken,
         protocolWallet,
-        admin
+        admin,
+        operator
     ]
 
     const contract = await ethers.deployContract("Presale", args)
@@ -49,7 +51,8 @@ async function deployPresale(
 
 async function baseSetup(
     protocolWallet,
-    admin
+    admin,
+    operator
 ) {
     const coinPriceFeed = await deployCoinPriceFeed()
     const token = await deployToken()
@@ -59,7 +62,8 @@ async function baseSetup(
             await token.getAddress(),
             await token.getAddress(),
             protocolWallet,
-            admin
+            admin,
+            operator
         )
     
     return { coinPriceFeed, token, presale }

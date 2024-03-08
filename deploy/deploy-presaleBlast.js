@@ -22,6 +22,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     const protocolWallet = process.env.PROTOCOL_WALLET
     const admin = process.env.PUBLIC_KEY_ADMIN
+    const operator = process.env.PUBLIC_KEY_OPERATOR
 
     const args = [
         coinPriceFeed,
@@ -30,7 +31,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         usdbToken,
         wethToken,
         protocolWallet,
-        admin
+        admin,
+        operator
     ]
 
     const presale = await deploy('PresaleBlast', {

@@ -11,6 +11,8 @@ describe('Presale test', function () {
     const TOKEN_PRECISION = 1e6
     const PRICE_FEED_PRECISION = 1e8
 
+    const TWENTEEN_HOURS = 43200
+
     let owner, user_1
 
     before(async function () {
@@ -19,7 +21,11 @@ describe('Presale test', function () {
 
     describe('Tests', function () {
         it("Method: updateProtocolWallet", async function() {
-            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address)
+            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address, owner.address)
+
+            await presale.updateProtocolWallet(ZERO_ADDRESS)
+
+            await time.increase(TWENTEEN_HOURS + 1)
 
             await presale.updateProtocolWallet(ZERO_ADDRESS)
 
@@ -27,7 +33,7 @@ describe('Presale test', function () {
         })
 
         it("Method: setStage", async function() {
-            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address)
+            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address, owner.address)
 
             expect(await presale.stageIterator()).to.be.eq(0)
 
@@ -37,9 +43,13 @@ describe('Presale test', function () {
         })
 
         it("Method: updateTotalSold", async function() {
-            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address)
+            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address, owner.address)
 
             expect(await presale.totalTokensSold()).to.be.eq(0)
+
+            await presale.updateTotalSold(200)
+
+            await time.increase(TWENTEEN_HOURS + 1)
 
             await presale.updateTotalSold(200)
 
@@ -47,7 +57,7 @@ describe('Presale test', function () {
         })
 
         it("Method depositUSDT", async function() {
-            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address)
+            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address, owner.address)
 
             await token.approve(await presale.getAddress(), ONE_USDT * 2)
 
@@ -57,7 +67,7 @@ describe('Presale test', function () {
         })
 
         it("Method depositUSDTTo", async function() {
-            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address)
+            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address, owner.address)
 
             await token.approve(await presale.getAddress(), ONE_USDT * 2)
 
@@ -71,7 +81,7 @@ describe('Presale test', function () {
         })
 
         it("Method depositCoin", async function() {
-            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address)
+            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address, owner.address)
 
             await presale.depositCoin(ZERO_ADDRESS, {value: ONE_ETH})
 
@@ -79,7 +89,7 @@ describe('Presale test', function () {
         })
 
         it("Method depositCoinTo", async function() {
-            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address)
+            const { priceFeed, token, presale } = await baseSetup(owner.address, owner.address, owner.address)
 
             expect(await presale.totalTokensSold()).to.be.eq(0)
 

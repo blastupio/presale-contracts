@@ -14,17 +14,21 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
 
     const coinPriceFeed = process.env.COIN_PRICE_FEED
-    const usdcToken = process.env.USDC_TOKEN
+
     const usdtToken = process.env.USDT_TOKEN
+    const usdcToken = process.env.USDC_TOKEN
+
     const protocolWallet = process.env.PROTOCOL_WALLET
     const admin = process.env.PUBLIC_KEY_ADMIN
+    const operator = process.env.PUBLIC_KEY_OPERATOR
 
     const args = [
         coinPriceFeed,
         usdcToken,
         usdtToken,
         protocolWallet,
-        admin
+        admin,
+        operator
     ]
 
     const presale = await deploy('PresaleBSC', {
