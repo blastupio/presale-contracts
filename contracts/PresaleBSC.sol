@@ -46,7 +46,7 @@ contract PresaleBSC is Presale {
     if(chargeBack > 0) token.safeTransfer(msg.sender, chargeBack);
   }
 
-  function _calculateAmount(bool isStableToken, uint256 value) internal view override returns (uint256 amount, uint256 price) {
+  function _calculateAmount(bool isStableToken, uint256 value) internal override returns (uint256 amount, uint256 price) {
     int256 coinPrice;
 
     if (isStableToken) {
@@ -56,6 +56,8 @@ contract PresaleBSC is Presale {
     }
 
     uint256 expectedAmount = uint(coinPrice) * value / uint(stages[stageIterator].cost);
+
+    emit AmountAndUSD(msg.sender, expectedAmount, coinPrice);
 
     return (expectedAmount / 10 ** (TOKEN_PRECISION), uint(coinPrice));
   }

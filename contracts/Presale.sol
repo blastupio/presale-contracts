@@ -213,7 +213,7 @@ contract Presale is IPresale, AccessControl, Pausable {
     if(chargeBack > 0) token.safeTransfer(msg.sender, chargeBack);
   }
 
-  function _calculateAmount(bool isStableToken, uint256 value) internal virtual view returns (uint256 amount, uint256 price) {
+  function _calculateAmount(bool isStableToken, uint256 value) internal virtual returns (uint256 amount, uint256 price) {
     int256 coinPrice;
     uint256 PRECISION;
 
@@ -226,6 +226,8 @@ contract Presale is IPresale, AccessControl, Pausable {
     }
 
     uint256 expectedAmount = uint(coinPrice) * value / uint(stages[stageIterator].cost);
+
+    emit AmountAndUSD(msg.sender, expectedAmount, coinPrice);
 
     return (expectedAmount / 10 ** (PRECISION), uint(coinPrice));
   }

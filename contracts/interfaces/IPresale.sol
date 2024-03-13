@@ -8,6 +8,7 @@ interface IPresale {
     }
 
     event TokensBought(address indexed token, address indexed user, address indexed referrer, uint256 amount);
+    event AmountAndUSD(address indexed user, uint256 amount, int256 usd);
     event StageUpdated(uint256 currentStage);
 
     function updateProtocolWallet(address wallet) external;
