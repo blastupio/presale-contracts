@@ -95,7 +95,7 @@ contract Presale is IPresale, AccessControl, Pausable {
     if(delayedTill > 0 && delayedTill <= block.timestamp) {
       totalTokensSold = amount;
 
-      _timestamps[0xe308a099] = 0;
+      _timestamps[0x76aa28fc] = 0;
     } else {
       _timestamps[0x76aa28fc] = block.timestamp + DEFAULT_DELAY;
     }
@@ -108,7 +108,7 @@ contract Presale is IPresale, AccessControl, Pausable {
   function unpause() external onlyRole(OPERATOR_ROLE) {
     _unpause();
   }
-
+//NOTe function selector is: 0x78e3214f
   function rescueFunds(IERC20 token, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
     uint256 delayedTill = _timestamps[0x78e3214f];
 
