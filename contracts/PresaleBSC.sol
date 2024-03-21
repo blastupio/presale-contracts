@@ -55,11 +55,11 @@ contract PresaleBSC is Presale {
       (, coinPrice, , , ) = COIN_PRICE_FEED.latestRoundData();
     }
 
-    uint256 expectedAmount = uint(coinPrice) * value / uint(stages[stageIterator].cost);
+    uint256 expectedAmount = (uint(coinPrice) * value / uint(stages[stageIterator].cost)) / 10 ** (TOKEN_PRECISION);
 
     emit AmountAndUSD(msg.sender, expectedAmount, coinPrice);
 
-    return (expectedAmount / 10 ** (TOKEN_PRECISION), uint(coinPrice));
+    return (expectedAmount, uint(coinPrice));
   }
 
   function _purchase(
